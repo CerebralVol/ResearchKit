@@ -34,14 +34,15 @@
 #import "HKSample+ORKJSONDictionary.h"
 #import "ORKHelpers.h"
 
+
 @interface ORKHKSampleTests : XCTestCase
 
 @end
 
+
 @implementation ORKHKSampleTests
 
-- (void)testHKSampleSerialization
-{
+- (void)testHKSampleSerialization {
     NSDate *d1 = [NSDate dateWithTimeIntervalSinceReferenceDate:0];
     NSDate *d2 = [NSDate dateWithTimeInterval:10 sinceDate:d1];
     
@@ -60,8 +61,7 @@
     XCTAssertNil(dict[@"metadata"], @"");
 }
 
-- (void)testHKMetadataSerialization
-{
+- (void)testHKMetadataSerialization {
     NSDate *d1 = [NSDate dateWithTimeIntervalSinceReferenceDate:0];
     NSDate *d2 = [NSDate dateWithTimeInterval:10 sinceDate:d1];
     
@@ -79,8 +79,7 @@
     XCTAssertEqualObjects(testMeta, dict[@"metadata"], @"");
 }
 
-- (void)testHKCorrelationSerialization
-{
+- (void)testHKCorrelationSerialization {
     NSDate *d1 = [NSDate dateWithTimeIntervalSinceReferenceDate:0];
     NSDate *d2 = [NSDate dateWithTimeInterval:10 sinceDate:d1];
     

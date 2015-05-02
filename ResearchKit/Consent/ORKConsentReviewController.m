@@ -36,22 +36,20 @@
 #import "ORKSkin.h"
 #import "ORKVerticalContainerView.h"
 #import "ORKVerticalContainerView_Internal.h"
-#import "ORKSkin.h"
+
 
 @interface ORKConsentReviewController()<UIWebViewDelegate>
 
 @end
 
-@implementation ORKConsentReviewController
-{
+
+@implementation ORKConsentReviewController {
     UIToolbar *_toolbar;
     NSLayoutConstraint *_toolbarHeightConstraint;
     NSString *_htmlString;
 }
 
-
 - (instancetype)initWithHTML:(NSString *)html delegate:(id<ORKConsentReviewControllerDelegate>)delegate {
-
     self = [super init];
     if (self) {
         _htmlString = html;
@@ -66,7 +64,6 @@
 }
 
 - (void)viewDidLoad {
-
     [super viewDidLoad];
     
     _toolbar = [[UIToolbar alloc] init];
@@ -133,9 +130,7 @@
     }]];
     
     [self presentViewController:alert animated:YES completion:nil];
-    
 }
-
 
 - (BOOL)webView:(UIWebView *)webView shouldStartLoadWithRequest:(NSURLRequest *)request navigationType:(UIWebViewNavigationType)navigationType {
     if (navigationType != UIWebViewNavigationTypeOther) {
@@ -146,11 +141,3 @@
 }
 
 @end
-
-
-
-
-
-
-
-

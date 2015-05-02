@@ -28,18 +28,20 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+
 #import <XCTest/XCTest.h>
 #import <ResearchKit/ResearchKit.h>
 #import "ORKResult_Private.h"
+
 
 @interface ORKResultTests : XCTestCase
 
 @end
 
+
 @implementation ORKResultTests
 
 - (ORKTaskResult *)createTaskResultTree {
-    
     // Construction
     ORKFileResult *fileResult1 = [[ORKFileResult alloc] init];
     fileResult1.fileURL = [NSURL fileURLWithPath:NSTemporaryDirectory()];
@@ -91,8 +93,7 @@
             
             XCTAssert(result1!=result2, @"");
             
-            if ([result1 isKindOfClass:[ORKQuestionResult class]])
-            {
+            if ([result1 isKindOfClass:[ORKQuestionResult class]]) {
                 ORKQuestionResult *q1 = (ORKQuestionResult *)result1;
                 ORKQuestionResult *q2 = (ORKQuestionResult *)result2;
                 
@@ -101,17 +102,13 @@
                     XCTAssert([q1.answer isEqual:q2.answer], @"");
                 }
                 XCTAssert([q1.identifier isEqualToString:q2.identifier], @"%@ and %@", q1.identifier, q2.identifier);
-            }
-            else if ([result1 isKindOfClass:[ORKFileResult class]])
-            {
+            } else if ([result1 isKindOfClass:[ORKFileResult class]]) {
                 ORKFileResult *f1 = (ORKFileResult *)result1;
                 ORKFileResult *f2 = (ORKFileResult *)result2;
                 
                 XCTAssert( [f1.fileURL isEqual:f2.fileURL], @"");
                 XCTAssert( [f1.contentType isEqualToString:f2.contentType], @"");
-            }
-            else if ([result1 isKindOfClass:[ORKConsentSignatureResult class]])
-            {
+            } else if ([result1 isKindOfClass:[ORKConsentSignatureResult class]]) {
                 ORKConsentSignatureResult *c1 = (ORKConsentSignatureResult *)result1;
                 ORKConsentSignatureResult *c2 = (ORKConsentSignatureResult *)result2;
                 
@@ -123,9 +120,7 @@
     }];
 }
 
-- (void)testResultSerialization
-{
-    
+- (void)testResultSerialization {
     ORKTaskResult *taskResult1 = [self createTaskResultTree];
     
     // Archive
@@ -139,8 +134,7 @@
     XCTAssertEqualObjects(taskResult1, taskResult2);
 }
 
-- (void)testResultCopy
-{
+- (void)testResultCopy {
     ORKTaskResult *taskResult1 = [self createTaskResultTree];
     
     ORKTaskResult *taskResult2 = [taskResult1 copy];
@@ -151,18 +145,17 @@
 }
 
 - (void)testCollectionResult {
-    
     ORKCollectionResult *result = [[ORKCollectionResult alloc] initWithIdentifier:@"001"];
     [result setResults:@[ [[ORKResult alloc]initWithIdentifier: @"101"], [[ORKResult alloc]initWithIdentifier: @"007"] ]];
     
-    ORKResult *ret = [result resultForIdentifier:@"005"];
-    XCTAssertNil(ret, @"%@", ret.identifier);
+    ORKResult *childResult = [result resultForIdentifier:@"005"];
+    XCTAssertNil(childResult, @"%@", childResult.identifier);
     
-    ret = [result resultForIdentifier:@"007"];
-    XCTAssertEqual(ret.identifier, @"007", @"%@", ret.identifier);
+    childResult = [result resultForIdentifier:@"007"];
+    XCTAssertEqual(childResult.identifier, @"007", @"%@", childResult.identifier);
     
-    ret = [result resultForIdentifier: @"101"];
-    XCTAssertEqual(ret.identifier, @"101", @"%@", ret.identifier);
+    childResult = [result resultForIdentifier: @"101"];
+    XCTAssertEqual(childResult.identifier, @"101", @"%@", childResult.identifier);
 }
 
 @end
