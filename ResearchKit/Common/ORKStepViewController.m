@@ -65,14 +65,18 @@
 #pragma clang diagnostic ignored "-Wobjc-designated-initializers"
 - (instancetype)initWithCoder:(NSCoder *)aDecoder {
     self = [super initWithCoder:aDecoder];
-    [self initializeInternalButtonItems];
+    if (self) {
+        [self initializeInternalButtonItems];
+    }
     return self;
 }
 #pragma clang diagnostic pop
 
 - (instancetype)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil {
     self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
-    [self initializeInternalButtonItems];
+    if (self) {
+        [self initializeInternalButtonItems];
+    }
     return self;
 }
 
@@ -274,7 +278,7 @@
 #pragma mark - Action Handlers
 
 - (void)goForward {
-
+    
     STRONGTYPE(self.delegate) strongDelegate = self.delegate;
     [strongDelegate stepViewController:self didFinishWithNavigationDirection:ORKStepViewControllerNavigationDirectionForward];
     UIAccessibilityPostNotification(UIAccessibilityScreenChangedNotification, nil);
@@ -334,22 +338,22 @@
 
 #pragma mark - UIStateRestoring
 
-static NSString * const _ORKStepIdentifierRestoreKey = @"stepIdentifier";
-static NSString * const _ORKPresentedDateRestoreKey = @"presentedDate";
-static NSString * const _ORKOutputDirectoryKey = @"outputDirectory";
+static NSString *const _ORKStepIdentifierRestoreKey = @"stepIdentifier";
+static NSString *const _ORKPresentedDateRestoreKey = @"presentedDate";
+static NSString *const _ORKOutputDirectoryKey = @"outputDirectory";
 
 - (void)encodeRestorableStateWithCoder:(NSCoder *)coder {
     [super encodeRestorableStateWithCoder:coder];
     
     [coder encodeObject:_step.identifier forKey:_ORKStepIdentifierRestoreKey];
     [coder encodeObject:_presentedDate forKey:_ORKPresentedDateRestoreKey];
-    [coder encodeObject:_outputDirectory forKey:_ORKOutputDirectoryKey];
+    [coder encodeObject:ORKBookmarkDataFromURL(_outputDirectory) forKey:_ORKOutputDirectoryKey];
 }
 
 - (void)decodeRestorableStateWithCoder:(NSCoder *)coder {
     [super decodeRestorableStateWithCoder:coder];
     
-    self.outputDirectory = [coder decodeObjectOfClass:[NSURL class] forKey:_ORKOutputDirectoryKey];
+    self.outputDirectory = ORKURLFromBookmarkData([coder decodeObjectOfClass:[NSData class] forKey:_ORKOutputDirectoryKey]);
     
     if (! self.step) {
         // Just logging to the console in this case, since this can happen during a taskVC restoration of a dynamic task.

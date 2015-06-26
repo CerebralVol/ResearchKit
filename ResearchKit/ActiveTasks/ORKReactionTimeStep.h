@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2015, Apple Inc. All rights reserved.
+ Copyright (c) 2015, James Cox. All rights reserved.
  
  Redistribution and use in source and binary forms, with or without modification,
  are permitted provided that the following conditions are met:
@@ -26,37 +26,34 @@
  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+*/
 
 
-#import "ORKConsentSection+AssetLoading.h"
-#import "ORKHelpers.h"
+#import <ResearchKit/ResearchKit.h>
+#import <AudioToolbox/AudioServices.h>
 
 
-static NSString *movieNameForType(ORKConsentSectionType type, CGFloat scale) {
-    
-    NSString *fullMovieName = [NSString stringWithFormat:@"consent_%02ld", (long)type+1];
-    fullMovieName = [NSString stringWithFormat:@"%@@%dx", fullMovieName, (int)scale];
-    return fullMovieName;
-}
+NS_ASSUME_NONNULL_BEGIN
 
-NSURL *ORKMovieURLForConsentSectionType(ORKConsentSectionType type) {
-    CGFloat scale = [[UIScreen mainScreen] scale];
-    
-    // For iPad, use the movie for the next scale up
-    if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad && scale < 3) {
-        scale++;
-    }
-    
-    NSURL *url = [ORKAssetsBundle() URLForResource:movieNameForType(type, scale) withExtension:@"m4v"];
-    if (url == nil) {
-        // This can fail on 3x devices when the display is set to zoomed. Try an asset at 2x instead.
-        url = [ORKAssetsBundle() URLForResource:movieNameForType(type, 2.0) withExtension:@"m4v"];
-    }
-    return url;
-}
+ORK_CLASS_AVAILABLE
+@interface ORKReactionTimeStep : ORKActiveStep
 
-UIImage *ORKImageForConsentSectionType(ORKConsentSectionType type) {
-    NSString *imageName = [NSString stringWithFormat:@"consent_%02ld", (long)type];
-    return [[UIImage imageNamed:imageName inBundle:ORKBundle() compatibleWithTraitCollection:nil] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
-}
+@property (nonatomic, assign) NSTimeInterval maximumStimulusInterval;
+
+@property (nonatomic, assign) NSTimeInterval minimumStimulusInterval;
+
+@property (nonatomic, assign) NSTimeInterval timeout;
+
+@property (nonatomic, assign) NSInteger numberOfAttempts;
+
+@property (nonatomic, assign) double thresholdAcceleration;
+
+@property (nonatomic, assign) SystemSoundID successSound;
+
+@property (nonatomic, assign) SystemSoundID timeoutSound;
+
+@property (nonatomic, assign) SystemSoundID failureSound;
+
+@end
+
+NS_ASSUME_NONNULL_END

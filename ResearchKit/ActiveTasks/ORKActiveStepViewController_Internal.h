@@ -40,8 +40,9 @@ NS_ASSUME_NONNULL_BEGIN
 @interface ORKActiveStepViewController ()
 
 /**
- * The customViewContainer allows custom view to be its subview.
- * @note When ORKTouchRecorder is present, its gesture recognizer attaches to customViewContainer.
+ The customViewContainer allows custom view to be its subview.
+ 
+ @note When ORKTouchRecorder is present, its gesture recognizer attaches to customViewContainer.
  */
 @property (nonatomic, strong, readonly, nullable) UIView *customViewContainer;
 
@@ -57,6 +58,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)applicationWillResignActive:(NSNotification *)notification;
 - (void)applicationDidBecomeActive:(NSNotification *)notification;
+
+- (void)stopRecorders;
 
 @end
 

@@ -33,6 +33,8 @@
 #import "ORKSkin.h"
 #import "ORKSelectionTitleLabel.h"
 
+#import <UIKit/UIGestureRecognizerSubclass.h>
+
 
 @protocol ORKSignatureGestureRecognizerDelegate <NSObject>
 
@@ -53,7 +55,14 @@
 @implementation ORKSignatureGestureRecognizer
 
 - (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event {
-    [self.eventDelegate gestureTouchesBegan:(NSSet *)touches withEvent:(UIEvent *)event];
+    if (touches.count > 1 || self.numberOfTouches > 1) {
+        for (UITouch *touch in touches) {
+            [self ignoreTouch:touch forEvent:event];
+        }
+    } else {
+        self.state = UIGestureRecognizerStateBegan;
+        [self.eventDelegate gestureTouchesBegan:(NSSet *)touches withEvent:(UIEvent *)event];
+    }
 }
 
 - (void)touchesMoved:(NSSet *)touches withEvent:(UIEvent *)event {
@@ -61,17 +70,21 @@
 }
 
 - (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event {
+    self.state = UIGestureRecognizerStateEnded;
     [self.eventDelegate gestureTouchesEnded:(NSSet *)touches withEvent:(UIEvent *)event];
 }
 
-- (BOOL)shouldRequireFailureOfGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
-    // Disable swipe gestureRecognizer
-    if ([otherGestureRecognizer isKindOfClass:[UISwipeGestureRecognizer class]]) {
-        // Cancel the gesture recognition in progress.
-        otherGestureRecognizer.enabled = NO;
-        otherGestureRecognizer.enabled = YES;
+- (void)touchesCancelled:(NSSet *)touches withEvent:(UIEvent *)event {
+    self.state = UIGestureRecognizerStateFailed;
+}
+
+- (BOOL)shouldBeRequiredToFailByGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
+    // Prioritize over scrollView's pan gesture recognizer and swipe gesture recognizer
+    if ([otherGestureRecognizer isKindOfClass:[UIPanGestureRecognizer class]]
+        || [otherGestureRecognizer isKindOfClass:[UISwipeGestureRecognizer class]]) {
+        return YES;
     }
-    return YES;
+    return NO;
 }
 
 @end
@@ -80,7 +93,7 @@
 static const CGFloat kPointMinDistance = 5;
 static const CGFloat kPointMinDistanceSquared = kPointMinDistance * kPointMinDistance;
 
-@interface ORKSignatureView () <ORKSignatureGestureRecognizerDelegate>{
+@interface ORKSignatureView () <ORKSignatureGestureRecognizerDelegate> {
     CGPoint currentPoint;
     CGPoint previousPoint1;
     CGPoint previousPoint2;
@@ -114,15 +127,15 @@ static const CGFloat kPointMinDistanceSquared = kPointMinDistance * kPointMinDis
                                                             toItem:nil
                                                          attribute:NSLayoutAttributeNotAnAttribute
                                                         multiplier:1
-                                                          constant:156]];
+                                                          constant:ORKGetMetricForWindow(ORKScreenMetricSignatureViewHeight, self.window)]];
         NSLayoutConstraint *widthConstraint = [NSLayoutConstraint constraintWithItem:self
                                                                            attribute:NSLayoutAttributeWidth
                                                                            relatedBy:NSLayoutRelationEqual
                                                                               toItem:nil
                                                                            attribute:NSLayoutAttributeNotAnAttribute
-                                                                          multiplier:1
-                                                                            constant:10000];
-        widthConstraint.priority = UILayoutPriorityFittingSizeLevel-5;
+                                                                          multiplier:1.0
+                                                                            constant:ORKScreenMetricMaxDimension];
+        widthConstraint.priority = UILayoutPriorityFittingSizeLevel - 5;
         [self addConstraint:widthConstraint];
     }
     return self;
@@ -205,10 +218,6 @@ static const CGFloat kPointMinDistanceSquared = kPointMinDistance * kPointMinDis
 #pragma mark Touch Event Handlers
 
 - (void)gestureTouchesBegan:(NSSet *)touches withEvent:(UIEvent *)event {
-    if (touches.count > 1 ) {
-        return;
-    }
-    
     UITouch *touch = [touches anyObject];
     
     self.currentPath = [self pathWithRoundedStyle];
@@ -220,6 +229,7 @@ static const CGFloat kPointMinDistanceSquared = kPointMinDistance * kPointMinDis
     previousPoint2 = [touch previousLocationInView:self];
     currentPoint = [touch locationInView:self];
     [self.currentPath moveToPoint:currentPoint];
+    [self.currentPath addArcWithCenter:currentPoint radius:0.1 startAngle:0.0 endAngle:2.0 * M_PI clockwise:YES];
     [self gestureTouchesMoved:touches withEvent:event];
 }
 
@@ -228,10 +238,6 @@ static CGPoint mmid_Point(CGPoint p1, CGPoint p2) {
 }
 
 - (void)gestureTouchesMoved:(NSSet *)touches withEvent:(UIEvent *)event {
-    if (touches.count > 1) {
-        return;
-    }
-    
     UITouch *touch = [touches anyObject];
     
     CGPoint point = [touch locationInView:self];
@@ -269,7 +275,7 @@ static CGPoint mmid_Point(CGPoint p1, CGPoint p2) {
 
 - (void)gestureTouchesEnded:(NSSet *)touches withEvent:(UIEvent *)event {
     CGRect rect = [self.currentPath bounds];
-    if (touches.count > 1 || CGSizeEqualToSize(rect.size, CGSizeZero)) {
+    if (CGSizeEqualToSize(rect.size, CGSizeZero)) {
         return;
     }
     

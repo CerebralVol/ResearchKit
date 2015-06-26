@@ -153,7 +153,7 @@
             (self.shouldVibrateOnStart == castObject.shouldVibrateOnStart) &&
             (self.shouldVibrateOnFinish == castObject.shouldVibrateOnFinish) &&
             (self.shouldContinueOnFinish == castObject.shouldContinueOnFinish) &&
-            (self.shouldUseNextAsSkipButton == castObject.shouldUseNextAsSkipButton)) ;
+            (self.shouldUseNextAsSkipButton == castObject.shouldUseNextAsSkipButton));
 }
 
 - (NSSet *)requestedHealthKitTypesForReading {
@@ -168,7 +168,7 @@
 }
 
 - (ORKPermissionMask)requestedPermissions {
-    ORKPermissionMask mask = ORKPermissionNone;
+    ORKPermissionMask mask = [super requestedPermissions];
     for (ORKRecorderConfiguration *config in self.recorderConfigurations) {
         mask |= [config requestedPermissionMask];
     }

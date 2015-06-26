@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2015, Apple Inc. All rights reserved.
+ Copyright (c) 2015, Bruce Duncan. All rights reserved.
  
  Redistribution and use in source and binary forms, with or without modification,
  are permitted provided that the following conditions are met:
@@ -29,14 +29,40 @@
  */
 
 
-#import <ResearchKit/ResearchKit_Private.h>
-#import "ORKConsentSection.h"
+#import <ResearchKit/ResearchKit.h>
 
 
-NS_ASSUME_NONNULL_BEGIN
+/**
+ The `ORKImageCaptureStep` class represents a step that captures an image via the device
+ camera.  A template image can optionally be overlaid the camera preview to assist in properly
+ capturing the image.
+ 
+ To use the image capture step, optionally set the `templateImage` and `templateImageInsets`
+ properties, incorporate the step into a task, and present the task with a task view controller.
+ 
+ If implementing an image capture task like this one, remember that people will
+ take your instructions literally. So, be cautious. Make sure your template image
+ is high contrast and very visible against a variety of backgrounds.
+ */
+ORK_CLASS_AVAILABLE
+@interface ORKImageCaptureStep : ORKStep
 
-NSURL *__nullable ORKMovieURLForConsentSectionType(ORKConsentSectionType type);
+/**
+ An image to be displayed over the camera preview.
+ 
+ The image will be stretched to fit the available space while retaining its aspect ratio.
+ When choosing a size for this asset, be sure to take into account the variations in device
+ form factors.
+ */
+@property (nonatomic, strong) UIImage *templateImage;
 
-UIImage *__nullable ORKImageForConsentSectionType(ORKConsentSectionType type);
+/**
+ Insets to be used in positioning and sizing the `templateImage`.
+ 
+ The insets are interpreted as percentages relative to the preview frame size.  The `left`
+ and `right` insets are relative to the width of the preview frame.  The `top` and `bottom`
+ insets are relative to the height of the preview frame.
+ */
+@property (nonatomic) UIEdgeInsets templateImageInsets;
 
-NS_ASSUME_NONNULL_END
+@end

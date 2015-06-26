@@ -210,8 +210,8 @@ static void *_ORKViewControllerToolbarObserverContext = &_ORKViewControllerToolb
     }
 }
 
-static NSString * const _PageViewControllerRestorationKey = @"pageViewController";
-static NSString * const _ChildNavigationControllerRestorationKey = @"childNavigationController";
+static NSString *const _PageViewControllerRestorationKey = @"pageViewController";
+static NSString *const _ChildNavigationControllerRestorationKey = @"childNavigationController";
 
 + (UIPageViewController *)pageViewController {
     UIPageViewController *pageViewController = [[UIPageViewController alloc] initWithTransitionStyle:UIPageViewControllerTransitionStyleScroll
@@ -323,11 +323,17 @@ static NSString * const _ChildNavigationControllerRestorationKey = @"childNaviga
     if (_hasBeenPresented) {
         @throw [NSException exceptionWithName:NSGenericException reason:@"Cannot change task after presenting task controller" userInfo:nil];
     }
-    if (task && ! [task conformsToProtocol:@protocol(ORKTask)]) {
-        @throw [NSException exceptionWithName:NSInvalidArgumentException reason:@"Expected a task" userInfo:nil];
-    }
-    if ( task && nil == [task identifier]) {
-        NSLog(@"%@: Task's identifier should not be nil.", NSStringFromSelector(_cmd));
+    
+    if (task) {
+        if (![task conformsToProtocol:@protocol(ORKTask)]) {
+            @throw [NSException exceptionWithName:NSInvalidArgumentException reason:@"Expected a task" userInfo:nil];
+        }
+        if ([task identifier] == nil) {
+            NSLog(@"%@: Task's identifier should not be nil.", NSStringFromSelector(_cmd));
+        }
+        if ([task respondsToSelector:@selector(validateParameters)]) {
+            [task validateParameters];
+        }
     }
     
     _hasRequestedHealthData = NO;
@@ -405,6 +411,15 @@ static NSString * const _ChildNavigationControllerRestorationKey = @"childNaviga
 - (void)requestAudioRecordingAccessWithHandler:(void (^)(BOOL success))handler {
     NSParameterAssert(handler != nil);
     [[AVAudioSession sharedInstance] requestRecordPermission:^(BOOL granted) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            handler(granted);
+        });
+    }];
+}
+
+- (void)requestCameraAccessWithHandler:(void (^)(BOOL success))handler {
+    NSParameterAssert(handler != nil);
+	[AVCaptureDevice requestAccessForMediaType:AVMediaTypeVideo completionHandler:^(BOOL granted) {
         dispatch_async(dispatch_get_main_queue(), ^{
             handler(granted);
         });
@@ -505,6 +520,21 @@ static NSString * const _ChildNavigationControllerRestorationKey = @"childNaviga
                         _grantedPermissions |= ORKPermissionCoreLocation;
                     } else {
                         _grantedPermissions &= ~ORKPermissionCoreLocation;
+                    }
+                    dispatch_semaphore_signal(semaphore);
+                }];
+            });
+            
+            dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
+        }
+        if (permissions & ORKPermissionCamera) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                ORK_Log_Debug(@"Requesting camera access");
+                [self requestCameraAccessWithHandler:^(BOOL success) {
+                    if (success) {
+                        _grantedPermissions |= ORKPermissionCamera;
+                    } else {
+                        _grantedPermissions &= ~ORKPermissionCamera;
                     }
                     dispatch_semaphore_signal(semaphore);
                 }];
@@ -716,23 +746,30 @@ static NSString * const _ChildNavigationControllerRestorationKey = @"childNaviga
     return [data copy];
 }
 
+- (void)ensureDirectoryExists:(NSURL *)outputDirectory {
+    // Only verify existence if the output directory is non-nil.
+    // But, even if the output directory is nil, we still set it and forward to the step VC.
+    if (outputDirectory != nil) {
+        BOOL isDirectory = NO;
+        BOOL directoryExists = [[NSFileManager defaultManager] fileExistsAtPath:outputDirectory.path isDirectory:&isDirectory];
+        
+        if (!directoryExists) {
+            NSError *error = nil;
+            if (![[NSFileManager defaultManager] createDirectoryAtURL:outputDirectory withIntermediateDirectories:YES attributes:nil error:&error]) {
+                @throw [NSException exceptionWithName:NSGenericException reason:@"Could not create output directory and output directory does not exist" userInfo:@{@"error" : error}];
+            }
+            isDirectory = YES;
+        } else if (!isDirectory) {
+            @throw [NSException exceptionWithName:NSGenericException reason:@"Desired outputDirectory is not a directory or could not be created." userInfo:nil];
+        }
+    }
+}
+
 - (void)setOutputDirectory:(NSURL *)outputDirectory {
     if (_hasBeenPresented) {
         @throw [NSException exceptionWithName:NSGenericException reason:@"Cannot change outputDirectory after presenting task controller" userInfo:nil];
     }
-    
-    BOOL isDir;
-    BOOL exist = [[NSFileManager defaultManager] fileExistsAtPath:outputDirectory.path isDirectory:&isDir];
-    
-    if (! exist) {
-        NSError *error = nil;
-        if (![[NSFileManager defaultManager] createDirectoryAtURL:outputDirectory withIntermediateDirectories:YES attributes:nil error:&error]) {
-            @throw [NSException exceptionWithName:NSGenericException reason:@"Could not create output directory and output directory does not exist" userInfo:@{@"error" : error}];
-        }
-        isDir = YES;
-    } else if (! isDir) {
-        @throw [NSException exceptionWithName:NSGenericException reason:@"Desired outputDirectory is not a directory or could not be created." userInfo:nil];
-    }
+    [self ensureDirectoryExists:outputDirectory];
     
     _outputDirectory = [outputDirectory copy];
     
@@ -1201,19 +1238,19 @@ static NSString * const _ChildNavigationControllerRestorationKey = @"childNaviga
 
 #pragma mark - UIStateRestoring
 
-static NSString * const _ORKTaskRunUUIDRestoreKey = @"taskRunUUID";
-static NSString * const _ORKShowsProgressInNavigationBarRestoreKey = @"showsProgressInNavigationBar";
-static NSString * const _ORKManagedResultsRestoreKey = @"managedResults";
-static NSString * const _ORKManagedStepIdentifiersRestoreKey = @"managedStepIdentifiers";
-static NSString * const _ORKHaveSetProgressLabelRestoreKey = @"haveSetProgressLabel";
-static NSString * const _ORKHasRequestedHealthDataRestoreKey = @"hasRequestedHealthData";
-static NSString * const _ORKRequestedHealthTypesForReadRestoreKey = @"requestedHealthTypesForRead";
-static NSString * const _ORKRequestedHealthTypesForWriteRestoreKey = @"requestedHealthTypesForWrite";
-static NSString * const _ORKOutputDirectoryRestoreKey = @"outputDirectory";
-static NSString * const _ORKLastBeginningInstructionStepIdentifierKey = @"lastBeginningInstructionStepIdentifier";
-static NSString * const _ORKTaskIdentifierRestoreKey = @"taskIdentifier";
-static NSString * const _ORKStepIdentifierRestoreKey = @"stepIdentifier";
-static NSString * const _ORKPresentedDate = @"presentedDate";
+static NSString *const _ORKTaskRunUUIDRestoreKey = @"taskRunUUID";
+static NSString *const _ORKShowsProgressInNavigationBarRestoreKey = @"showsProgressInNavigationBar";
+static NSString *const _ORKManagedResultsRestoreKey = @"managedResults";
+static NSString *const _ORKManagedStepIdentifiersRestoreKey = @"managedStepIdentifiers";
+static NSString *const _ORKHaveSetProgressLabelRestoreKey = @"haveSetProgressLabel";
+static NSString *const _ORKHasRequestedHealthDataRestoreKey = @"hasRequestedHealthData";
+static NSString *const _ORKRequestedHealthTypesForReadRestoreKey = @"requestedHealthTypesForRead";
+static NSString *const _ORKRequestedHealthTypesForWriteRestoreKey = @"requestedHealthTypesForWrite";
+static NSString *const _ORKOutputDirectoryRestoreKey = @"outputDirectory";
+static NSString *const _ORKLastBeginningInstructionStepIdentifierKey = @"lastBeginningInstructionStepIdentifier";
+static NSString *const _ORKTaskIdentifierRestoreKey = @"taskIdentifier";
+static NSString *const _ORKStepIdentifierRestoreKey = @"stepIdentifier";
+static NSString *const _ORKPresentedDate = @"presentedDate";
 
 - (void)encodeRestorableStateWithCoder:(NSCoder *)coder {
     [super encodeRestorableStateWithCoder:coder];
@@ -1226,7 +1263,8 @@ static NSString * const _ORKPresentedDate = @"presentedDate";
     [coder encodeObject:_requestedHealthTypesForRead forKey:_ORKRequestedHealthTypesForReadRestoreKey];
     [coder encodeObject:_requestedHealthTypesForWrite forKey:_ORKRequestedHealthTypesForWriteRestoreKey];
     [coder encodeObject:_presentedDate forKey:_ORKPresentedDate];
-    [coder encodeObject:_outputDirectory forKey:_ORKOutputDirectoryRestoreKey];
+    
+    [coder encodeObject:ORKBookmarkDataFromURL(_outputDirectory) forKey:_ORKOutputDirectoryRestoreKey];
     [coder encodeObject:_lastBeginningInstructionStepIdentifier forKey:_ORKLastBeginningInstructionStepIdentifierKey];
     
     [coder encodeObject:_task.identifier forKey:_ORKTaskIdentifierRestoreKey];
@@ -1245,7 +1283,8 @@ static NSString * const _ORKPresentedDate = @"presentedDate";
     _taskRunUUID = [coder decodeObjectOfClass:[NSUUID class] forKey:_ORKTaskRunUUIDRestoreKey];
     self.showsProgressInNavigationBar = [coder decodeBoolForKey:_ORKShowsProgressInNavigationBarRestoreKey];
     
-    _outputDirectory = [coder decodeObjectOfClass:[NSURL class] forKey:_ORKOutputDirectoryRestoreKey];
+    _outputDirectory = ORKURLFromBookmarkData([coder decodeObjectOfClass:[NSData class] forKey:_ORKOutputDirectoryRestoreKey]);
+    [self ensureDirectoryExists:_outputDirectory];
     
     // Must have a task object already provided by this point in the restoration, in order to restore any other state.
     if (_task) {
@@ -1279,7 +1318,7 @@ static NSString * const _ORKPresentedDate = @"presentedDate";
 }
 
 
-- (void) applicationFinishedRestoringState {
+- (void)applicationFinishedRestoringState {
     [super applicationFinishedRestoringState];
     
     _pageViewController = (UIPageViewController *)[self.childNavigationController viewControllers][0];

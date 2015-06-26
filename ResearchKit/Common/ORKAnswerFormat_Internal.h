@@ -76,6 +76,8 @@ ORK_DESIGNATE_CODING_AND_SERIALIZATION_INITIALIZERS(ORKTimeIntervalAnswerFormat)
 
 - (BOOL)isAnswerValidWithString:(nullable NSString *)text;
 
+- (BOOL)isAnswerValid:(id)answer;
+
 - (nullable NSString *)localizedInvalidValueStringWithAnswerString:(nullable NSString *)text;
 
 - (nonnull Class)questionResultClass;
@@ -123,26 +125,28 @@ ORK_DESIGNATE_CODING_AND_SERIALIZATION_INITIALIZERS(ORKTimeIntervalAnswerFormat)
 - (NSInteger)numberOfSteps;
 - (nullable NSNumber *)normalizedValueForNumber:(nullable NSNumber *)number;
 - (BOOL)isVertical;
+- (NSString *)maximumValueDescription;
+- (NSString *)minimumValueDescription;
 
 @end
 
 
-@interface ORKScaleAnswerFormat() <ORKScaleAnswerFormatProvider>
+@interface ORKScaleAnswerFormat () <ORKScaleAnswerFormatProvider>
 
 @end
 
 
-@interface ORKContinuousScaleAnswerFormat() <ORKScaleAnswerFormatProvider>
+@interface ORKContinuousScaleAnswerFormat () <ORKScaleAnswerFormatProvider>
 
 @end
 
 
-@interface ORKTextChoice() <ORKAnswerOption>
+@interface ORKTextChoice () <ORKAnswerOption>
 
 @end
 
 
-@interface ORKImageChoice() <ORKAnswerOption>
+@interface ORKImageChoice () <ORKAnswerOption>
 
 @end
 

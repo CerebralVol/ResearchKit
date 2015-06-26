@@ -132,7 +132,7 @@
     return _activeStepView.customViewContainer;
 }
 
-- (UIImageView *)imageView {
+- (ORKTintedImageView *)imageView {
     __unused UIView *view = [self view];
     return _activeStepView.imageView;
 }
@@ -239,7 +239,7 @@
 }
 
 - (void)prepareStep {
-    if (self.activeStep==nil) {
+    if (self.activeStep == nil) {
         return;
     }
     
@@ -455,8 +455,8 @@
     }
 }
 
-static NSString * const _ORKFinishedRestoreKey = @"finished";
-static NSString * const _ORKRecorderResultsRestoreKey = @"recorderResults";
+static NSString *const _ORKFinishedRestoreKey = @"finished";
+static NSString *const _ORKRecorderResultsRestoreKey = @"recorderResults";
 
 - (void)encodeRestorableStateWithCoder:(NSCoder *)coder {
     [super encodeRestorableStateWithCoder:coder];

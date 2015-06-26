@@ -35,11 +35,9 @@
 #import "ORKAccessibility.h"
 #import "ORKDefines_Private.h"
 #import "ORKAnswerFormat_Internal.h"
-
-
-@interface ORKScaleSlider ()
-
-@end
+#import "ORKSkin.h"
+#import "ORKScaleSliderView.h"
+#import "ORKScaleRangeDescriptionLabel.h"
 
 
 @implementation ORKScaleSlider {
@@ -71,6 +69,7 @@
 
 - (void)setShowThumb:(BOOL)showThumb {
     _showThumb = showThumb;
+    [self setNeedsLayout];
 }
 
 - (void)setVertical:(BOOL)vertical {
@@ -78,6 +77,7 @@
         _vertical = vertical;
         self.transform = _vertical ? CGAffineTransformMakeRotation(-M_PI_2) : CGAffineTransformIdentity;
         _thumbImageNeedsTransformUpdate = YES;
+        [self invalidateIntrinsicContentSize];
     }
 }
 
@@ -108,31 +108,27 @@
 
 - (CGSize)intrinsicContentSize {
     CGSize intrinsicContentSize = [super intrinsicContentSize];
-    // If we have a layout width provided by our delegate and we are vertical, use the provided
-    // width for the instrinsic content height, and leave the intrinsic content width alone.
-    // The intrinsic content width is typically -1, which will allow the slider to fill the
-    // available width in the superview.
-    CGFloat sliderLayoutWidth = self.delegate.sliderLayoutWidth;
-    if(_vertical && sliderLayoutWidth > 0) {
-        intrinsicContentSize = CGSizeMake(intrinsicContentSize.width, sliderLayoutWidth);
+    if (_vertical) {
+        CGFloat verticalScaleHeight = ORKGetMetricForWindow(ORKScreenMetricVerticalScaleHeight, self.window);
+        intrinsicContentSize = (CGSize){.width = verticalScaleHeight, .height = verticalScaleHeight};
     }
     return intrinsicContentSize;
 }
 
-- (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event {
-    UIView *view = nil;
+- (BOOL)pointInside:(CGPoint)point withEvent:(UIEvent *)event {
+    BOOL pointInside = NO;
     if (_vertical) {
         // In vertical mode, we need to ignore the touch area for the needed extra width
         const CGFloat desiredSliderWidth = 44.0;
         const CGFloat actualWidth = [self bounds].size.width;
         const CGFloat centerX = actualWidth / 2;
         if (fabs(point.y - centerX) < desiredSliderWidth / 2) {
-            view = [super hitTest:point withEvent:event];
+            pointInside = [super pointInside:point withEvent:event];
         }
     } else {
-        view = [super hitTest:point withEvent:event];
+        pointInside = [super pointInside:point withEvent:event];
     }
-    return view;
+    return pointInside;
 }
 
 - (void)sliderTouched:(UIGestureRecognizer *)gesture {
@@ -224,10 +220,16 @@ static CGFloat kPadding = 2.0;
 }
 
 - (NSString *)accessibilityLabel {
-    return [NSString stringWithFormat:
-            ORKLocalizedString(@"AX_SLIDER_LABEL", nil),
-            [self _axFormattedValue:self.minimumValue],
-            [self _axFormattedValue:self.maximumValue]];
+    ORKScaleSliderView *sliderView = (ORKScaleSliderView *)[self ork_superviewOfType:[ORKScaleSliderView class]];
+    NSString *minimumValue = [self _axFormattedValue:self.minimumValue];
+    NSString *maximumValue = [self _axFormattedValue:self.maximumValue];
+    
+    // Include the range description labels if they are set.
+    if (sliderView.leftRangeDescriptionLabel.text.length > 0 && sliderView.rightRangeDescriptionLabel.text.length > 0) {
+        minimumValue = [minimumValue stringByAppendingFormat:@", %@, ", sliderView.leftRangeDescriptionLabel.text];
+        maximumValue = [maximumValue stringByAppendingFormat:@", %@", sliderView.rightRangeDescriptionLabel.text];
+    }
+    return [NSString stringWithFormat:ORKLocalizedString(@"AX_SLIDER_LABEL", nil), minimumValue, maximumValue];
 }
 
 - (NSString *)accessibilityValue {

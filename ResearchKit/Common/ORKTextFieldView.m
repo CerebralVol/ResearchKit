@@ -103,10 +103,14 @@
 }
 
 - (void)ork_setSuffix:(NSString *)suffix withColor:(UIColor *)color {
+    CGRect previousSuffixFrame = CGRectZero;
     if (_suffixLabel) {
+        previousSuffixFrame = _suffixLabel.frame;
         [_suffixLabel removeFromSuperview];
         _suffixLabel = nil;
         [self setNeedsLayout];
+    } else {
+        previousSuffixFrame.size.height = CGRectGetHeight(self.bounds);
     }
     if ([suffix length] == 0) {
         return;
@@ -117,7 +121,8 @@
     _suffixLabel.textAlignment = NSTextAlignmentLeft;
     _suffixLabel.userInteractionEnabled = NO;
     _suffixLabel.lineBreakMode = NSLineBreakByTruncatingMiddle;
-    
+    _suffixLabel.frame = previousSuffixFrame;
+
     // re-layout to position the suffix
     [self setNeedsLayout];
 }
@@ -346,8 +351,6 @@ static const UIEdgeInsets paddingGuess = (UIEdgeInsets){.left = 6, .right=6};
 }
 
 - (void)updateConstraints {
-    [super updateConstraints];
-    
     _textField.translatesAutoresizingMaskIntoConstraints = NO;
     
     NSDictionary *views = NSDictionaryOfVariableBindings(_textField);
@@ -364,11 +367,16 @@ static const UIEdgeInsets paddingGuess = (UIEdgeInsets){.left = 6, .right=6};
     
     // Ask to fill the available horizontal space
     NSLayoutConstraint *constraint = [NSLayoutConstraint constraintWithItem:_textField
-                                                         attribute:NSLayoutAttributeWidth
-                                                         relatedBy:NSLayoutRelationEqual toItem:nil attribute:NSLayoutAttributeNotAnAttribute multiplier:1 constant:10000];
+                                                                  attribute:NSLayoutAttributeWidth
+                                                                  relatedBy:NSLayoutRelationEqual
+                                                                     toItem:nil
+                                                                  attribute:NSLayoutAttributeNotAnAttribute
+                                                                 multiplier:1
+                                                                   constant:ORKScreenMetricMaxDimension];
     constraint.priority = UILayoutPriorityDefaultLow;
     [self addConstraint:constraint];
     
+    [super updateConstraints];
 }
 
 

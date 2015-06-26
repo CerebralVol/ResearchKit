@@ -1,5 +1,6 @@
 /*
  Copyright (c) 2015, Apple Inc. All rights reserved.
+ Copyright (c) 2015, Bruce Duncan.
  
  Redistribution and use in source and binary forms, with or without modification,
  are permitted provided that the following conditions are met:
@@ -84,6 +85,14 @@ typedef NS_ENUM(NSInteger, ORKChoiceAnswerStyle) {
     ORKChoiceAnswerStyleMultipleChoice
 } ORK_ENUM_AVAILABLE;
 
+/// An enumeration of the format styles available for scale answers.
+typedef NS_ENUM(NSInteger, ORKNumberFormattingStyle) {
+    /// The default decimal style.
+    ORKNumberFormattingStyleDefault,
+    
+    /// Percent style.
+    ORKNumberFormattingStylePercent
+} ORK_ENUM_AVAILABLE;
 
 @class ORKScaleAnswerFormat;
 @class ORKContinuousScaleAnswerFormat;
@@ -138,13 +147,17 @@ ORK_CLASS_AVAILABLE
                                                minimumValue:(NSInteger)scaleMinimum
                                                defaultValue:(NSInteger)defaultValue
                                                        step:(NSInteger)step
-                                                   vertical:(BOOL)vertical;
+                                                   vertical:(BOOL)vertical
+                                    maximumValueDescription:(nullable NSString *)maximumValueDescription
+                                    minimumValueDescription:(nullable NSString *)minimumValueDescription;
 
 + (ORKContinuousScaleAnswerFormat *)continuousScaleAnswerFormatWithMaximumValue:(double)scaleMaximum
                                                                    minimumValue:(double)scaleMinimum
                                                                    defaultValue:(double)defaultValue
                                                           maximumFractionDigits:(NSInteger)maximumFractionDigits
-                                                                       vertical:(BOOL)vertical;
+                                                                       vertical:(BOOL)vertical
+                                                        maximumValueDescription:(nullable NSString *)maximumValueDescription
+                                                        minimumValueDescription:(nullable NSString *)minimumValueDescription;
 
 + (ORKBooleanAnswerFormat *)booleanAnswerFormat;
 
@@ -207,11 +220,13 @@ ORK_CLASS_AVAILABLE
  
  This method is the designated initializer.
  
- @param maximumValue    The upper bound of the scale.
- @param minimumValue    The lower bound of the scale.
- @param defaultValue    The default value of the scale. If this value is out of range, the slider is displayed without a default value.
- @param step            The size of each discrete offset on the scale.
- @param vertical        Pass YES to use a vertical scale; for the default horizontal scale, pass NO.
+ @param maximumValue                The upper bound of the scale.
+ @param minimumValue                The lower bound of the scale.
+ @param defaultValue                The default value of the scale. If this value is out of range, the slider is displayed without a default value.
+ @param step                        The size of each discrete offset on the scale.
+ @param vertical                    Pass `YES` to use a vertical scale; for the default horizontal scale, pass `NO`.
+ @param maximumValueDescription     A localized label to describe the maximum value of the scale. For none, pass `nil`.
+ @param minimumValueDescription     A localized label to describe the minimum value of the scale. For none, pass `nil`.
  
  @return An initialized scale answer format.
  */
@@ -219,7 +234,29 @@ ORK_CLASS_AVAILABLE
                         minimumValue:(NSInteger)minimumValue
                         defaultValue:(NSInteger)defaultValue
                                 step:(NSInteger)step
-                            vertical:(BOOL)vertical NS_DESIGNATED_INITIALIZER;
+                            vertical:(BOOL)vertical
+             maximumValueDescription:(nullable NSString *)maximumValueDescription
+             minimumValueDescription:(nullable NSString *)minimumValueDescription NS_DESIGNATED_INITIALIZER;
+
+
+/**
+ Returns an initialized scale answer format using the specified values.
+ 
+ This method is a convenience initializer.
+ 
+ @param maximumValue    The upper bound of the scale.
+ @param minimumValue    The lower bound of the scale.
+ @param defaultValue    The default value of the scale. If this value is out of range, the slider is displayed without a default value.
+ @param step            The size of each discrete offset on the scale.
+ @param vertical        Pass `YES` to use a vertical scale; for the default horizontal scale, pass `NO`.
+ 
+ @return An initialized scale answer format.
+ */
+- (instancetype)initWithMaximumValue:(NSInteger)maximumValue
+                        minimumValue:(NSInteger)minimumValue
+                        defaultValue:(NSInteger)defaultValue
+                                step:(NSInteger)step
+                            vertical:(BOOL)vertical;
 
 /**
  Returns an initialized horizontal scale answer format using the specified values.
@@ -270,6 +307,21 @@ ORK_CLASS_AVAILABLE
  */
 @property (readonly, getter=isVertical) BOOL vertical;
 
+/**
+ Number formatter applied to the minimum, maximum, and slider values. Can be overridden by subclasses.
+ */
+@property (readonly) NSNumberFormatter *numberFormatter;
+
+/**
+ A localized label to describe the maximum value of the scale. (read-only)
+ */
+@property (readonly, nullable) NSString *maximumValueDescription;
+
+/**
+ A localized label to describe the minimum value of the scale. (read-only)
+ */
+@property (readonly, nullable) NSString *minimumValueDescription;
+
 @end
 
 
@@ -283,15 +335,17 @@ ORK_CLASS_AVAILABLE
 @interface ORKContinuousScaleAnswerFormat : ORKAnswerFormat
 
 /**
- Returns an initialized continous scale answer format using the specified values.
+ Returns an initialized continuous scale answer format using the specified values.
  
  This method is the designated initializer.
  
- @param maximumValue            The upper bound of the scale.
- @param minimumValue            The lower bound of the scale.
- @param defaultValue            The default value of the scale. If this value is out of range, the slider is displayed without a default value.
- @param maximumFractionDigits   The maximum number of fractional digits to display.
- @param vertical                Pass YES to use a vertical scale; for the default horizontal scale, pass NO.
+ @param maximumValue                The upper bound of the scale.
+ @param minimumValue                The lower bound of the scale.
+ @param defaultValue                The default value of the scale. If this value is out of range, the slider is displayed without a default value.
+ @param maximumFractionDigits       The maximum number of fractional digits to display.
+ @param vertical                    Pass `YES` to use a vertical scale; for the default horizontal scale, pass `NO`.
+ @param maximumValueDescription     A localized label to describe the maximum value of the scale. For none, pass `nil`.
+ @param minimumValueDescription     A localized label to describe the minimum value of the scale. For none, pass `nil`.
  
  @return An initialized scale answer format.
  */
@@ -299,7 +353,26 @@ ORK_CLASS_AVAILABLE
                         minimumValue:(double)minimumValue
                         defaultValue:(double)defaultValue
                maximumFractionDigits:(NSInteger)maximumFractionDigits
-                            vertical:(BOOL)vertical NS_DESIGNATED_INITIALIZER;
+                            vertical:(BOOL)vertical
+             maximumValueDescription:(nullable NSString *)maximumValueDescription
+             minimumValueDescription:(nullable NSString *)minimumValueDescription NS_DESIGNATED_INITIALIZER;
+
+/**
+ Returns an initialized continuous scale answer format using the specified values.
+ 
+ @param maximumValue            The upper bound of the scale.
+ @param minimumValue            The lower bound of the scale.
+ @param defaultValue            The default value of the scale. If this value is out of range, the slider is displayed without a default value.
+ @param maximumFractionDigits   The maximum number of fractional digits to display.
+ @param vertical                Pass `YES` to use a vertical scale; for the default horizontal scale, pass `NO`.
+ 
+ @return An initialized scale answer format.
+ */
+- (instancetype)initWithMaximumValue:(double)maximumValue
+                        minimumValue:(double)minimumValue
+                        defaultValue:(double)defaultValue
+               maximumFractionDigits:(NSInteger)maximumFractionDigits
+                            vertical:(BOOL)vertical;
 
 /**
  Returns an initialized horizontal continous scale answer format using the specified values.
@@ -308,7 +381,7 @@ ORK_CLASS_AVAILABLE
  
  @param maximumValue            The upper bound of the scale.
  @param minimumValue            The lower bound of the scale.
- @param step                    The size of each discrete offset on the scale.
+ @param defaultValue            The default value of the scale. If this value is out of range, the slider is displayed without a default value.
  @param maximumFractionDigits   The maximum number of fractional digits to display.
  
  @return An initialized scale answer format.
@@ -344,6 +417,26 @@ ORK_CLASS_AVAILABLE
  A Boolean value indicating whether the scale is oriented vertically. (read-only)
  */
 @property (readonly, getter=isVertical) BOOL vertical;
+
+/**
+ Formatting style applied to the minimum, maximum, and slider values.
+ */
+@property ORKNumberFormattingStyle numberStyle;
+
+/**
+ Number formatter applied to the minimum, maximum, and slider values. Can be overridden by subclasses.
+ */
+@property (readonly) NSNumberFormatter *numberFormatter;
+
+/**
+ A localized label to describe the maximum value of the scale. (read-only)
+ */
+@property (readonly, nullable) NSString *maximumValueDescription;
+
+/**
+ A localized label to describe the minimum value of the scale. (read-only)
+ */
+@property (readonly, nullable) NSString *minimumValueDescription;
 
 @end
 
@@ -478,15 +571,16 @@ ORK_CLASS_AVAILABLE
 @interface ORKTextChoice : NSObject <NSSecureCoding, NSCopying, NSObject>
 
 /**
- Returns a text choice object that includes the specified primary and detail text.
+ Returns a text choice object that includes the specified primary text, detail text, and exclusivity.
  
  @param text        The primary text that describes the choice in a localized string.
  @param detailText  The detail text to display below the primary text, in a localized string.
  @param value       The value to record in a result object when this item is selected.
+ @param exclusive   Whether this choice is to be considered exclusive within the set of choices.
  
  @return A text choice instance.
  */
-+ (instancetype)choiceWithText:(NSString *)text detailText:(nullable NSString *)detailText value:(id<NSCopying, NSCoding, NSObject>)value;
++ (instancetype)choiceWithText:(NSString *)text detailText:(nullable NSString *)detailText value:(id<NSCopying, NSCoding, NSObject>)value exclusive:(BOOL)exclusive;
 
 /**
  Returns a choice object that includes the specified primary text.
@@ -499,19 +593,21 @@ ORK_CLASS_AVAILABLE
 + (instancetype)choiceWithText:(NSString *)text value:(id<NSCopying, NSCoding, NSObject>)value;
 
 /**
- Returns an initialized text choice object using the specified primary and detail text.
+ Returns an initialized text choice object using the specified primary text, detail text, and exclusivity.
  
  This method is the designated initializer.
  
  @param text        The primary text that describes the choice in a localized string.
  @param detailText  The detail text to display below the primary text, in a localized string.
  @param value       The value to record in a result object when this item is selected.
+ @param exclusive   Whether this choice is to be considered exclusive within the set of choices.
  
  @return An initialized text choice.
  */
 - (instancetype)initWithText:(NSString *)text
                   detailText:(nullable NSString *)detailText
-                       value:(id<NSCopying, NSCoding, NSObject>)value NS_DESIGNATED_INITIALIZER;
+                       value:(id<NSCopying, NSCoding, NSObject>)value
+                    exclusive:(BOOL)exclusive NS_DESIGNATED_INITIALIZER;
 
 /**
  The text that describes the choice in a localized string.
@@ -535,6 +631,13 @@ ORK_CLASS_AVAILABLE
  The detail text can span multiple lines. Note that `ORKValuePickerAnswerFormat` ignores detail text.
   */
 @property (copy, readonly, nullable) NSString *detailText;
+
+/**
+ In a multiple choice format, this indicates whether this choice requires all other choices to be unselected.
+ 
+ In general, this is used to indicate a "None of the above" choice.
+ */
+@property (readonly) BOOL exclusive;
 
 @end
 

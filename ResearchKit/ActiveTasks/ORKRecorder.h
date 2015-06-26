@@ -59,7 +59,7 @@ NS_ASSUME_NONNULL_BEGIN
 ORK_CLASS_AVAILABLE
 @interface ORKRecorderConfiguration : NSObject <NSSecureCoding>
 
-/**
+/*
  The `init` and `new` methods are unavailable outside the framework on `ORKRecorderConfiguration`,
  because it is an abstract class.
  
@@ -264,7 +264,6 @@ ORK_CLASS_AVAILABLE
  To use a recorder, include its configuration in the `recorderConfigurations` property
  of an `ORKActiveStep` object, include that step in a task, and present it with
  a task view controller.
- 
  */
 ORK_CLASS_AVAILABLE
 @interface ORKPedometerRecorderConfiguration : ORKRecorderConfiguration
